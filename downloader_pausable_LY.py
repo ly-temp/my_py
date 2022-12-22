@@ -24,15 +24,16 @@ class Temp_data:
 		return str(self.__dict__)
 
 
-	def update_temp(self, f_temp):
-		f_temp.seek(0)
-		#f_temp.write('\n'.join(map(str, list(temp_data.values()))))
-		f_temp.write('\n'.join(map(str, self.__dict__.values())))
-		f_temp.write('\n')
-		f_temp.truncate()
-		#force flushing
-		f_temp.flush()
-		os.fsync(f_temp.fileno())
+	def update_temp(self):
+		with open(temp_file, "w") as f_temp:
+			f_temp.seek(0)
+			#f_temp.write('\n'.join(map(str, list(temp_data.values()))))
+			f_temp.write('\n'.join(map(str, self.__dict__.values())))
+			f_temp.write('\n')
+			f_temp.truncate()
+			#force flushing
+			f_temp.flush()
+			os.fsync(f_temp.fileno())
 
 class Config_data:
 	def __init__(self, f_config_arr):
@@ -79,7 +80,7 @@ def extract_headers(header_file):
 		return headers
 	return None
 	
-def valid_filename(f_temp, temp_data, filename):
+def valid_filename(temp_data, filename):
 	f = os.path.basename(filename)
 	name, extension = os.path.splitext(f)		#diff with bash e.g. .bashrc
 	count = 1
@@ -88,7 +89,7 @@ def valid_filename(f_temp, temp_data, filename):
 		count += 1
 
 	temp_data.lock_name = f
-	temp_data.update_temp(f_temp)
+	temp_data.update_temp()
 
 	return f
 
@@ -110,15 +111,16 @@ def grep_content_disposition(dispos_strg):
 		print('grep_content_disposition exception, response headers')
 		return None
 
-def printf_log(f_log, strg, is_logging):	#f_log must be opened before call
+def printf_log(strg, is_logging):
 	print(strg, end='')
 	if is_logging:
-		#force flushing
-		f_log.write(strg)
-		f_log.flush()
-		os.fsync(f_log.fileno())
+		with open(log_file, "a") as f_log:
+			#force flushing
+			f_log.write(strg)
+			f_log.flush()
+			os.fsync(f_log.fileno())
 
-def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
+def dl_resource(config_data, temp_data, line, headers):
 	#equivalent:  "$cookie_file" != "" => headers != None
 	#			  "$is_logging"	 != "" => f_log != None
 	global just_resume
@@ -127,7 +129,7 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 			just_resume = 0
 		else:
 			temp_data.lock_name = ""
-			temp_data.update_temp(f_temp)
+			temp_data.update_temp()
 		if os.path.exists(pause_file):
 			exit
 
@@ -149,7 +151,7 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 				filename = grep_content_disposition(r.headers['content-disposition'])
 			else:
 				filename = urllib.parse.unquote(os.path.basename(r.url))
-			filename = valid_filename(f_temp, temp_data, filename)
+			filename = valid_filename(temp_data, filename)
 
 		if filename is None:
 			if line == "":
@@ -161,16 +163,16 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 				else:
 					filename = str(temp_data.current_counter)+'-'+purged_line
 
-		printf_log(f_log, "\n"+filename, config_data.is_logging)
+		printf_log("\n"+filename, config_data.is_logging)
 
 		try:
 			byte = open(filename, 'wb').write(r.content)
 			if byte > 0:
-				printf_log(f_log, '[S]', config_data.is_logging)
+				printf_log('[S]', config_data.is_logging)
 			else:
-				printf_log(f_log, '[E]', config_data.is_logging)
+				printf_log('[E]', config_data.is_logging)
 		except:
-			printf_log(f_log, '[E] wf', config_data.is_logging)	#write file err
+			printf_log('[E] wf', config_data.is_logging)	#write file err
 
 #		r = requests.get(url, allow_redirects=True, headers=headers)
 #		if 'content-disposition' in r.headers:		#r.headers is caseinsensitive-type dict
@@ -189,7 +191,7 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 #		except:
 #			print('[E] wf')		#write file err
 #
-#		temp_data.update_temp(f_temp)
+#		temp_data.update_temp()
 
 
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -254,20 +256,13 @@ with open(temp_file, "r+") as f_temp:
 	os.chdir(download_dir)
 	temp_file = "../"+temp_file
 
-	#log
-	if config_data.is_logging is not None:
-		f_log = open(log_file, "a")
-	else:
-		f_log = None
-	#end log
-
 	#cookie
 	#cookies = extract_cookie(args.cookie_file)
 	headers = extract_headers(args.cookie_file)
 	#end cookie
 
 	if args.strg_file is None:
-		dl_resource(f_temp, f_log, config_data, temp_data, "", headers)
+		dl_resource(config_data, temp_data, "", headers)
 	else:
 		with open(args.strg_file, "r") as f_strg:
 
@@ -276,11 +271,6 @@ with open(temp_file, "r+") as f_temp:
 					#print("this_line: ", j, line, end='')
 					line = line.rstrip('\r\n')
 					temp_data.current_strg_counter = j+1
-					dl_resource(f_temp, f_log, config_data, temp_data, line, headers)
+					dl_resource(config_data, temp_data, line, headers)
 					#just_resume = 0	#bash func cannot visit global var
 					temp_data.current_counter = config_data.min_int
-
-	#close log
-	if config_data.is_logging is not None:
-		f_log.close()
-	#end close log
