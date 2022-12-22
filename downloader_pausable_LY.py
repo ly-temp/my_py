@@ -25,15 +25,19 @@ class Temp_data:
 
 
 	def update_temp(self):
-		with open(temp_file, "w") as f_temp:
-			f_temp.seek(0)
-			#f_temp.write('\n'.join(map(str, list(temp_data.values()))))
-			f_temp.write('\n'.join(map(str, self.__dict__.values())))
-			f_temp.write('\n')
-			f_temp.truncate()
-			#force flushing
-			f_temp.flush()
-			os.fsync(f_temp.fileno())
+		#with open(temp_file, "w") as f_temp:
+		f_temp = open(temp_file, "w")
+
+		f_temp.seek(0)
+		#f_temp.write('\n'.join(map(str, list(temp_data.values()))))
+		f_temp.write('\n'.join(map(str, self.__dict__.values())))
+		f_temp.write('\n')
+		f_temp.truncate()
+		#force flushing
+		f_temp.flush()
+		os.fsync(f_temp.fileno())
+
+		f_temp.close()
 
 class Config_data:
 	def __init__(self, f_config_arr):
@@ -114,11 +118,15 @@ def grep_content_disposition(dispos_strg):
 def printf_log(strg, is_logging):
 	print(strg, end='')
 	if is_logging:
-		with open(log_file, "a") as f_log:
-			#force flushing
-			f_log.write(strg)
-			f_log.flush()
-			os.fsync(f_log.fileno())
+		#with open(log_file, "a") as f_log:
+		f_log = open(log_file, "a")
+
+		#force flushing
+		f_log.write(strg)
+		f_log.flush()
+		os.fsync(f_log.fileno())
+
+		f_log.close()
 
 def dl_resource(config_data, temp_data, line, headers):
 	#equivalent:  "$cookie_file" != "" => headers != None
