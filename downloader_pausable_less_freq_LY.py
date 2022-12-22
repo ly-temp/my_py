@@ -128,7 +128,7 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 		else:
 			temp_data.lock_name = ""
 			temp_data.update_temp(f_temp)
-			#one_time_exit
+			#one_time_exit sys.exit()
 		if os.path.exists(pause_file):
 			exit
 
