@@ -26,13 +26,13 @@ class Temp_data:
 
 	def update_temp(self):
 		#with open(temp_file, "w") as f_temp:
-		f_temp = open(temp_file, "w")
+		f_temp = open(temp_file, "w+")
 
 		f_temp.seek(0)
 		#f_temp.write('\n'.join(map(str, list(temp_data.values()))))
 		f_temp.write('\n'.join(map(str, self.__dict__.values())))
 		f_temp.write('\n')
-		f_temp.truncate()
+		#f_temp.truncate()
 		#force flushing
 		f_temp.flush()
 		os.fsync(f_temp.fileno())
