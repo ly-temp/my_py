@@ -164,14 +164,14 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 
 		printf_log(f_log, "\n"+filename, config_data.is_logging)
 
-		try:
-			byte = open(filename, 'wb').write(r.content)
-			if byte > 0:
+		if r.ok:
+			try:
+				open(filename, 'wb').write(r.content)
 				printf_log(f_log, '[S]', config_data.is_logging)
-			else:
-				printf_log(f_log, '[E]', config_data.is_logging)
-		except:
-			printf_log(f_log, '[E] wf', config_data.is_logging)	#write file err
+			except:
+				printf_log(f_log, '[E] wf', config_data.is_logging)	#write file err
+		else:
+			printf_log(f_log, '[E] '+str(r.status_code), config_data.is_logging)
 
 #		r = requests.get(url, allow_redirects=True, headers=headers)
 #		if 'content-disposition' in r.headers:		#r.headers is caseinsensitive-type dict
