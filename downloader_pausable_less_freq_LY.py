@@ -157,7 +157,7 @@ def dl_resource(f_temp, f_log, config_data, temp_data, line, headers):
 				filename = str(temp_data.current_counter)
 			else:
 				purged_line = urllib.parse.unquote(os.path.basename(line))
-				if config_data.max_int == '0':
+				if config_data.max_int == 0 and config_data.min_int == 0:
 					filename = purged_line
 				else:
 					filename = str(temp_data.current_counter)+'-'+purged_line
