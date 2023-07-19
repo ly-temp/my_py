@@ -201,9 +201,9 @@ with open(temp_file, "r+") as f_temp:
 #end read
 
 	if not os.path.exists(download_dir):
-	   os.makedirs(download_dir)
-	os.chdir(download_dir)
-	temp_file="../"+temp_file
+		os.makedirs(download_dir)
+		os.chdir(download_dir)
+		temp_file="../"+temp_file
 
 	#log
 	if config_data.is_logging is not None:
